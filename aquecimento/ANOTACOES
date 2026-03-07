@@ -1,0 +1,8 @@
+Obs: A opção -Wall diz ao gcc para gerar warnings (avisos) 
+
+o argumento (-o) o instrui a colocar o resultado da 
+compilação, o programa/código executável. 
+
+No arquivo cujo nome vem a seguir: ex1. 
+Você irá usar isso durante o curso inteiro, 
+então por favor tente entender essa linha de comando.
