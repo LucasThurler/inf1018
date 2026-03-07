@@ -6,3 +6,34 @@ compilação, o programa/código executável.
 No arquivo cujo nome vem a seguir: ex1. 
 Você irá usar isso durante o curso inteiro, 
 então por favor tente entender essa linha de comando.
+
+respondendo a 4. a): tentar executar só com ex1 nao
+funciona pq no linux, o shell nao procura no diretorio
+atual (.) por padrao, apesar de que ex1 existe e está
+no programa executavel, mas . nao está no PATH ent
+ele retorna commmand not found.
+Se usamos ./ funciona pq isso diz exatamente
+"execute o arquivo daqui".
+
+o lance de transformar cada arquivo em objeto
+pra rodar com o compilador e depois ligar os 
+dois num programa executavel dá pra fazer direto
+só usando gcc -Wall -o ex2 labaux.c ex2.c
+
+assim vc avisa ao compilador que seu programma
+é composto por esses dois arquivos .c
+
+
+respondendo a 4. c):
+Resultado: printf lê os bits errados e imprime 
+lixo/valor incorreto (0.00 no seu teste com 4.0).
+
+O que mudou:
+Antes, com protótipo (ou .h incluído), o compilador 
+sabia a assinatura correta e gerava a chamada certa.
+Depois que “tiramos a informação sobre as funções”, 
+ele teve que chutar (e chutou errado para esse caso).
+
+Sugestões para correção:
+Declare foo antes de usar em ex3.c ou, melhor, crie 
+um header labaux.h com: float foo(float pf);
