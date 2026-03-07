@@ -37,3 +37,41 @@ ele teve que chutar (e chutou errado para esse caso).
 Sugestões para correção:
 Declare foo antes de usar em ex3.c ou, melhor, crie 
 um header labaux.h com: float foo(float pf);
+
+
+Sobre o último item (5.):
+Nas chamadas de dump em ex4.c, os argumentos são:
+
+dump(&c1, sizeof(c1));
+dump(&c2, sizeof(c2));
+dump(&i, sizeof(i));
+dump(v, sizeof(v));
+
+Interpretando cada uma:
+
+-> &c1 aponta para um char com valor 1, 
+e sizeof(c1) é 1 byte.
+-> &c2 aponta para um char com valor '1', 
+e sizeof(c2) também é 1 byte.
+-> &i aponta para um int com valor 1, 
+e sizeof(i) é 4 bytes (na sua máquina).
+-> v (sem &) já é o endereço do primeiro elemento do 
+vetor char v[] = "1", 
+e sizeof(v) é 2 bytes ('1' + '\0').
+
+Pelo resultado, obtivemos:
+
+c1 armazenado como byte 1.
+c2 armazenado como byte 49 (ASCII de '1').
+i armazenado como 1 0 0 0, indicando int de 4 bytes e 
+ordem little-endian nesta arquitetura.
+v armazenado como 49 0, ou seja, string em vetor de 
+char termina com byte nulo.
+
+Conclusão geral:
+
+char ocupa 1 byte.
+int ocupa mais bytes (aqui, 4).
+Vetor de char guarda os bytes em sequência na memória 
+e, quando é string literal, 
+inclui o terminador '\0'.
