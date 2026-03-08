@@ -1,0 +1,18 @@
+a) A função string2num converte uma string de dígitos em um número inteiro. 
+Ela percorre a string caractere por caractere usando o ponteiro s. 
+Em cada iteração, o valor numérico do caractere atual é obtido por (*s - '0'), 
+porque os caracteres '0' até '9' estão em sequência na tabela ASCII. 
+Assim, '1' - '0' = 1, '2' - '0' = 2, e assim por diante.
+
+A variável a começa em 0 e, a cada passo, seu valor é atualizado com 
+a = a*10 + (*s - '0'). 
+Isso faz com que os dígitos anteriores sejam deslocados uma casa decimal 
+para a esquerda e o novo dígito seja acrescentado no final.
+
+
+b)@LucasThurler ➜ /workspaces/inf1018/lab2 (main) $ gcc -Wall -o ex2b ex2b.c
+@LucasThurler ➜ /workspaces/inf1018/lab2 (main) $ ./ex2b
+511
+777
+
+c)
