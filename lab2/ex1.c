@@ -9,7 +9,7 @@ void dump (void *p, int n) {
 }
 
 int main (void) {
-  int i = 10000;
-  dump(&i, sizeof(i));
+  char p[] = "A \n$";
+  dump(p, sizeof(p));
   return 0;
 }

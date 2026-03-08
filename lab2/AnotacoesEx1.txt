@@ -1,0 +1,77 @@
+Comentando o item 1. a)
+O resultado mostra exatamente a representação binária do int i = 10000 
+na memória.
+
+O programa chama dump(&i, sizeof(i)), então ele imprime todos os bytes de i.
+Como saíram 4 linhas, sizeof(i) = 4, então nesse ambiente um int tem 4 bytes.
+O valor 10000 em hexadecimal é 0x00002710.
+No dump apareceu:
+
+...a4 - 10
+...a5 - 27
+...a6 - 00
+...a7 - 00
+Ou seja, os bytes estão em ordem: 10 27 00 00.
+
+Isso indica arquitetura little-endian: o byte menos significativo (0x10) 
+fica no menor endereço, depois 0x27, 
+e os mais significativos (0x00, 0x00) vêm nos endereços seguintes.
+
+Testei outros valores para o i, a fim de descobrir se havia um limite para
+a maquina armazenar um int na memoria, testei 2147483647 e 2147483648
+-2147483647 e  2147483649
+
+depois dos testes e estudo, concluí que:
+a máquina não “guarda números” do jeito que a gente pensa; ela guarda bits.
+Quem decide se aqueles bits significam 2147483647, -1, 
+um endereço, um char, ou outra coisa é a interpretação.
+
+Então, quando você passa do limite, normalmente os bits continuam existindo. 
+O que muda é que a interpretação daquele padrão já não corresponde 
+ao número matemático que tinhamos em mente.
+
+Ideia central:
+Um int de 32 bits tem só 32 bits. Logo, só existem:
+2^32 padrões possíveis de bits.
+
+Ou seja, a memória consegue representar um conjunto finito de estados.
+Ela não consegue representar todos os inteiros da matemática.
+
+Para signed int em 32 bits, a faixa usual é:
+−2147483648 até 2147483647
+
+Ao tentar sair dessa faixa, aconteceu que:
+o hardware faz uma operação e os bits “dão a volta”.
+
+
+
+para a letra b) e c) se eu troco para long, os endereços continuam mudando cada
+vez que eu compilo de novo o codigo e, quando executo, nesse caso,
+temos 8 bytes, sendo que os 4 bytes a mais sao preenchidos com zeros.
+Para o short, a logica e repete, mas dessa vez temos só 2 bytes,
+mostrando os significativos primeiro, ainda, por conta do little endian.
+10 27
+
+para a letra d) @LucasThurler ➜ /workspaces/inf1018/lab2 (main) $ gcc -Wall -o ex1 ex1.c
+ex1.c: In function ‘main’:
+ex1.c:12:12: warning: overflow in conversion from ‘int’ to ‘char’ changes value from ‘10000’ to ‘16’ [-Woverflow]
+   12 |   char i = 10000;
+      |            ^~~~~
+@LucasThurler ➜ /workspaces/inf1018/lab2 (main) $ gcc -Wall -o ex1 ex1.c
+ex1.c: In function ‘main’:
+ex1.c:12:12: warning: character constant too long for its type
+   12 |   char i = '10000';
+      |            ^~~~~~~
+ex1.c:12:12: warning: overflow in conversion from ‘int’ to ‘char’ changes value from ‘808464432’ to ‘48’ [-Woverflow]
+@LucasThurler ➜ /workspaces/inf1018/lab2 (main) $ 
+
+
+para o ultimo item e): como notei que o char p[] enxerga o numero 7509 como
+{'7', '5', '0', '9', '\0'}
+entao, para testar os caracteres A, ' ', \n e $ eu juntei tudo numa " "
+ficando "A \n$", o que me resultou nos codigos ASCII para cada caractere
+41 -> A
+20 -> ' '
+0a -> \n
+24 -> $
+00 -> \0
