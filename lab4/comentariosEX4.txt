@@ -1,0 +1,34 @@
+Programa 1
+Neste programa as variáveis x e y são declaradas como unsigned int.
+A variável x recebe o valor 0xffffffff, que corresponde ao maior valor 
+possível para um inteiro sem sinal de 32 bits (4294967295). 
+A variável y recebe o valor 2.
+
+Ao comparar x < y, o resultado é falso, pois 4294967295 é muito maior que 2. 
+Portanto, o programa imprime que x não é menor que y.
+
+
+Programa 2
+Neste programa x e y também são unsigned int, porém o valor de x é exibido 
+usando %d no printf, que interpreta o número como inteiro com sinal.
+
+Como 0xffffffff possui todos os bits iguais a 1, ao ser interpretado como int 
+ele aparece como -1. Porém internamente o valor continua sendo 4294967295, 
+pois a variável é unsigned. Por isso a comparação x < y continua sendo falsa.
+
+
+Programa 3
+Neste programa a variável x é declarada como int (com sinal) e y como 
+unsigned int.
+
+O valor 0xffffffff, quando armazenado em um int, representa -1 
+(devido à representação em complemento de dois). Entretanto, na comparação 
+x < y, ocorre uma conversão implícita de tipos: o int é convertido para 
+unsigned int.
+
+Assim, -1 passa a ser interpretado como 4294967295. A comparação realizada 
+pelo compilador é equivalente a:
+
+4294967295 < 2
+
+o que é falso. Portanto o programa imprime que x não é menor que y.

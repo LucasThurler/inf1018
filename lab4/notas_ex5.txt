@@ -1,0 +1,43 @@
+No comando
+
+signed char sc = -1;
+unsigned int ui = sc;
+
+a variável sc armazena o valor -1 em um tipo de 8 bits com sinal. 
+Em complemento de 2, -1 é representado por todos os bits iguais a 1. 
+Assim, a representação interna de sc é:
+
+11111111
+
+ou, em hexadecimal:
+
+0xff
+
+Ao atribuir sc a ui, o código gerado precisa fazer duas conversões: 
+uma de tamanho (de 8 bits para 32 bits) e outra de tipo 
+(de signed char para unsigned int).
+
+Como o tipo original é signed, a mudança de tamanho é feita por extensão de 
+sinal, repetindo o bit mais significativo à esquerda. 
+Assim, o valor de sc passa de:
+
+11111111
+
+para:
+
+11111111 11111111 11111111 11111111
+
+em 32 bits.
+
+Em seguida, esse mesmo padrão de bits é interpretado como unsigned int. 
+Portanto, a representação interna final de ui é:
+
+11111111 11111111 11111111 11111111
+
+ou:
+
+0xffffffff
+
+Como ui é sem sinal, esse padrão corresponde ao valor decimal:
+
+4294967295
