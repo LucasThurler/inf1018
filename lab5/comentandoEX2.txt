@@ -1,0 +1,18 @@
+A estrutura possui os campos int a, short b e int c.
+Como int ocupa 4 bytes e short ocupa 2 bytes, a soma simples
+seria 10 bytes. Entretanto, o compilador adiciona 2 bytes de
+padding após o campo b.
+
+Isso ocorre porque o campo c é do tipo int, que precisa estar
+alinhado em endereços múltiplos de 4 bytes. Como b termina no
+offset 6, o compilador insere dois bytes extras para que c
+comece no offset 8.
+
+Assim, o layout da estrutura fica:
+
+a -> 4 bytes
+b -> 2 bytes
+padding -> 2 bytes
+c -> 4 bytes
+
+Total: 12 bytes.
