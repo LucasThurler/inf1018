@@ -1,0 +1,5 @@
+int b[2] --> 2 * sizeof(int) = 2*4 = 8 bytes
+short a[2][3] --> array multidimensional
+2 * 3 = 6 elementos ----- é como se estivessemos fazendo o calculo da area
+para o espaço em "metros quadrados" q a array vai ocupar
+6*int = 6*4 = 24 bytes
