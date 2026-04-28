@@ -27,7 +27,7 @@ LOOP:
 
     /* if p->cc (se apontar pra 0) */
     movzbl  (%r12), %eax    /* eax = p->cc zero extend pq tá no offset 0 */
-    # cc é char dentro da struct por a conversao zbl
+    # cc é char dentro da struct por a conversao zbl, n considera sinal
     cmpl    $0,     %eax
     je  continua
 
