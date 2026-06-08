@@ -22,6 +22,7 @@ Total: 8 bytes. Confirmamos o padrão de prólogo/epílogo
 que cria_func deverá gerar.
 
 
+
 Etapa 2 - Inspeção do call indireto e movabs
 --------------------------------------------
 O trabalho exige que cria_func gere dinamicamente o código de
@@ -51,6 +52,7 @@ da Etapa 1, mapeamos os 16 bytes do wrapper mínimo para
 1 parâmetro PARAM inteiro.
 
 
+
 Etapa 3 - Implementação e teste: 1 parâmetro INT_PAR + PARAM
 -------------------------------------------------------------
 Implementamos o primeiro caso de cria_func: 1 parâmetro inteiro
@@ -76,6 +78,7 @@ O warning "requires executable stack" é esperado e previsto pois
 executamos código gerado dinamicamente em vetor de bytes.
 
 
+
 Etapa 4 - Inspeção do mov imediato 32 bits (parâmetro FIX)
 ----------------------------------------------------------
 Para parâmetros FIX, o wrapper precisa mover uma constante
@@ -87,3 +90,207 @@ Inspecionamos os bytes de movl $10, %edi:
 Opcode bf seguido de 4 bytes da constante em little-endian.
 Não usa prefixo 48 pois int é 32 bits.
 
+
+
+Etapa 5 - Implementação e teste: parâmetros FIX
+------------------------------------------------
+Adicionamos suporte ao tipo FIX em cria_func. Para cada
+parâmetro FIX, o código gerado emite:
+
+  bf + 4 bytes   mov $constante, %edi   (1º parâmetro)
+  be + 4 bytes   mov $constante, %esi   (2º parâmetro)
+  ba + 4 bytes   mov $constante, %edx   (3º parâmetro)
+
+A constante é embutida em little-endian via memcpy.
+Parâmetros PARAM continuam sem instrução adicional.
+
+Testes realizados:
+
+Teste 1: 1 parâmetro PARAM (regressão)
+  soma_um(4)  -> esperado 5,  obtido 5  
+  soma_um(10) -> esperado 11, obtido 11 
+  soma_um(0)  -> esperado 1,  obtido 1  
+
+Teste 2: 2 parâmetros — PARAM + FIX (y=10 fixo)
+  mult(3, 10) -> esperado 30, obtido 30 
+  mult(7, 10) -> esperado 70, obtido 70 
+  mult(1, 10) -> esperado 10, obtido 10 
+
+Teste 3: 2 parâmetros — FIX + FIX (x=6, y=7)
+  mult(6, 7)  -> esperado 42, obtido 42 
+
+
+
+Etapa 6 - Inspeção do mov indireto (parâmetro IND)
+---------------------------------------------------
+Para parâmetros IND, o wrapper precisa carregar o endereço
+da variável em %rax e então ler seu valor corrente.
+Inspecionamos os bytes gerados:
+
+  48 b8 + 8 bytes   movabs $endereço_var, %rax   (carrega ponteiro)
+  8b 38             mov (%rax), %edi              (1º parâmetro)
+  8b 30             mov (%rax), %esi              (2º parâmetro)
+  8b 10             mov (%rax), %edx              (3º parâmetro)
+
+Total por parâmetro IND: 12 bytes (10 do movabs + 2 do mov indireto).
+O valor lido é sempre o corrente no momento da chamada.
+
+
+
+Etapa 7 - Implementação e teste: parâmetro IND
+-----------------------------------------------
+Adicionamos suporte ao tipo IND em cria_func. Para cada
+parâmetro IND, o código gerado emite:
+
+  48 b8 + 8 bytes   movabs $endereço_var, %rax   (carrega ponteiro)
+  8b 38             mov (%rax), %edi              (1º parâmetro)
+  8b 30             mov (%rax), %esi              (2º parâmetro)
+  8b 10             mov (%rax), %edx              (3º parâmetro)
+
+O valor lido é sempre o corrente no momento da chamada,
+confirmando o comportamento esperado para IND.
+
+Testes realizados:
+
+Teste 1: PARAM (regressão)
+  soma_um(4)  -> esperado 5,  obtido 5  
+  soma_um(10) -> esperado 11, obtido 11 
+  soma_um(0)  -> esperado 1,  obtido 1  
+
+Teste 2: PARAM + FIX (regressão)
+  mult(3, 10) -> esperado 30, obtido 30 
+  mult(7, 10) -> esperado 70, obtido 70 
+  mult(1, 10) -> esperado 10, obtido 10 
+
+Teste 3: FIX + FIX (regressão)
+  mult(6, 7)  -> esperado 42, obtido 42 
+
+Teste 4: IND + FIX — valor da variável muda entre chamadas
+  var=5: mult(5, 3) -> esperado 15, obtido 15 
+  var=8: mult(8, 3) -> esperado 24, obtido 24 
+  var=2: mult(2, 3) -> esperado 6,  obtido 6  
+
+Teste 5: IND + IND — ambas variáveis mudam
+  a=4, b=9: mult(4, 9) -> esperado 36, obtido 36 
+  a=3, b=7: mult(3, 7) -> esperado 21, obtido 21 
+
+
+
+Etapa 8 - primeira tentativa
+de correção de erros: perda de PARAMs ao reposicionar argumentos
+-----------------------------------------------------------------------
+Ao testar PTR_PAR com memcmp (FIX + PARAM + PARAM), ocorreu
+segmentation fault. O problema: ao emitir o FIX para %rdi,
+o valor PARAM que havia chegado em %rdi era perdido antes
+de ser reposicionado.
+
+Conforme o aviso no enunciado:
+"a localização dos parâmetros não amarrados recebidos pela
+função gerada pode não ser a mesma para a chamada à função
+original. Cuidado para não perder o valor desses parâmetros!"
+
+Solução: antes de emitir qualquer FIX ou IND, reposicionar
+todos os PARAMs de trás para frente (do último para o primeiro),
+evitando sobrescrever valores ainda necessários. Pra isso,
+mapeamos os bytes de mov entre registradores de 32 e 64 bits.
+
+
+
+Etapa 9 - Correção do bug de reposicionamento e suporte a PTR_PAR
+-----------------------------------------------------------------
+Corrigimos o bug identificado na Etapa 8 e adicionamos suporte
+completo a PTR_PAR. A solução foi dividir a geração de código
+em dois passos:
+
+Passo 1 — reposicionar PARAMs de trás para frente:
+  Antes de emitir qualquer FIX ou IND, percorremos os parâmetros
+  do último para o primeiro. Para cada PARAM, calculamos em qual
+  registrador ele chegou (contando os PARAMs anteriores) e
+  emitimos um mov reg->reg se necessário.
+
+  Bytes dos movs entre registradores usados:
+  64 bits (PTR_PAR): 48 89 fe/fa/f7/f2/d7/d6
+  32 bits (INT_PAR): 89 fe/fa/f7/f2/d7/d6
+
+Passo 2 — emitir FIX e IND normalmente:
+  PTR_PAR + FIX: 48 bf/be/ba + 8 bytes do ponteiro
+  PTR_PAR + IND: 48 b8 + 8 bytes + 48 8b 38/30/10
+
+Testes realizados:
+
+Teste 1: PARAM
+  soma_um(4)  -> esperado 5,  obtido 5 
+  soma_um(10) -> esperado 11, obtido 11
+  soma_um(0)  -> esperado 1,  obtido 1 
+
+Teste 2: PARAM + FIX
+  mult(3,10) -> esperado 30, obtido 30
+  mult(7,10) -> esperado 70, obtido 70
+  mult(1,10) -> esperado 10, obtido 10
+
+Teste 3: FIX + FIX
+  mult(6,7) -> esperado 42, obtido 42
+
+Teste 4: IND + FIX
+  var=5: mult(5,3) -> esperado 15, obtido 15
+  var=8: mult(8,3) -> esperado 24, obtido 24
+  var=2: mult(2,3) -> esperado 6,  obtido 6 
+
+Teste 5: IND + IND
+  a=4,b=9: mult(4,9) -> esperado 36, obtido 36
+  a=3,b=7: mult(3,7) -> esperado 21, obtido 21
+
+Teste 6: PTR_PAR FIX + PARAM + PARAM (memcmp do enunciado)
+  'quero saber' prefixo de 11 chars? -> esperado SIM, obtido SIM
+  'outro texto' prefixo de 11 chars? -> esperado NAO, obtido NAO
+
+
+
+Etapa 10 - Testes de casos extremos e cobertura completa
+---------------------------------------------------------
+Realizamos testes cobrindo todas as combinações relevantes
+de tipos e origens, incluindo casos com 3 parâmetros e
+FIX em posições variadas.
+
+Teste 1: PARAM
+  soma_um(4)  -> esperado 5,  obtido 5 
+  soma_um(10) -> esperado 11, obtido 11
+  soma_um(0)  -> esperado 1,  obtido 1 
+
+Teste 2: PARAM + FIX
+  mult(3,10) -> esperado 30, obtido 30
+  mult(7,10) -> esperado 70, obtido 70
+
+Teste 3: FIX + FIX
+  mult(6,7) -> esperado 42, obtido 42
+
+Teste 4: IND + FIX
+  var=5: mult(5,3) -> esperado 15, obtido 15
+  var=8: mult(8,3) -> esperado 24, obtido 24
+
+Teste 5: IND + IND
+  a=4,b=9: mult(4,9) -> esperado 36, obtido 36
+  a=3,b=7: mult(3,7) -> esperado 21, obtido 21
+
+Teste 6: PTR_PAR FIX + PARAM + PARAM (memcmp)
+  'quero saber' prefixo de 11? -> esperado SIM, obtido SIM
+  'outro texto' prefixo de 11? -> esperado NAO, obtido NAO
+
+Teste 7: 3 PARAMs
+  soma3(1,2,3) -> esperado 6,  obtido 6 
+  soma3(4,5,6) -> esperado 15, obtido 15
+
+Teste 8: PARAM + FIX(100) + PARAM
+  soma3(1,100,2) -> esperado 103, obtido 103
+  soma3(3,100,4) -> esperado 107, obtido 107
+
+Teste 9: FIX(50) + PARAM + PARAM
+  soma3(50,1,2) -> esperado 53, obtido 53
+  soma3(50,3,4) -> esperado 57, obtido 57
+
+Teste 10: PTR_PAR IND + PARAM + PARAM (memcmp)
+  ptr=str_a: memcmp(str_a,str_b,5)  -> esperado 0,   obtido 0 
+  ptr=str_b: memcmp(str_b,str_b,5)  -> esperado 0,   obtido 0 
+  ptr=str_a: memcmp(str_a,str_b,11) -> esperado !=0, obtido 3 
+
+Compilação sem warnings: gcc -Wall -Wa,--execstack -o teste cria_func.c teste.c
