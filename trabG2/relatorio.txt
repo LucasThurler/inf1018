@@ -1,0 +1,89 @@
+Relatório 
+Lucas Thurler - 2212824 - 3WA
+Trabalho G2 INF1018 - Gerador Dinâmico de Funções
+==============================================================
+
+Etapa 1 - Inspeção do prólogo/epílogo e instrução básica
+---------------------------------------------------------
+Compilamos a função assembly foo(int x) { return x; } para
+inspecionar os bytes gerados pelo compilador.
+
+Arquivo: foo.s
+Comando: gcc -c foo.s -o foo.o && objdump -d foo.o
+
+Resultado:
+  55           push  %rbp        (prólogo)
+  48 89 e5     mov   %rsp, %rbp  (prólogo)
+  89 f8        mov   %edi, %eax  (corpo: repassa x como retorno)
+  c9           leave             (epílogo)
+  c3           ret               (epílogo)
+
+Total: 8 bytes. Confirmamos o padrão de prólogo/epílogo
+que cria_func deverá gerar.
+
+
+Etapa 2 - Inspeção do call indireto e movabs
+--------------------------------------------
+O trabalho exige que cria_func gere dinamicamente o código de
+uma função "wrapper" — func intermediária que recebe os argumentos
+livres (PARAM), completa os amarrados (FIX/IND), e então chama
+a função original f. Conforme orientação do professor na parte Dicas,
+inspecionamos os bytes de um wrapper simples para entender quais
+instruções de máquina precisaremos gerar.
+
+Como o wrapper precisa chamar f sem saber seu endereço em tempo
+de compilação, usamos call indireto (call *%rax), onde %rax
+carrega o endereço de f em runtime. Para carregar um endereço
+de 64 bits em %rax, usamos movabs — única instrução que comporta
+um imediato de 64 bits completo.
+
+Arquivo: mov_imm64.s
+Comando: gcc -c mov_imm64.s -o mov_imm64.o && objdump -d mov_imm64.o
+
+Resultado relevante:
+  48 b8 + 8 bytes   movabs $endereço, %rax   (little-endian)
+  ff d0             call   *%rax
+
+Conclusão: para embutir o endereço de f no código gerado,
+usamos os bytes 48 b8 seguidos dos 8 bytes do ponteiro em
+little-endian (via memcpy). Combinando com prólogo/epílogo
+da Etapa 1, mapeamos os 16 bytes do wrapper mínimo para
+1 parâmetro PARAM inteiro.
+
+
+Etapa 3 - Implementação e teste: 1 parâmetro INT_PAR + PARAM
+-------------------------------------------------------------
+Implementamos o primeiro caso de cria_func: 1 parâmetro inteiro
+livre (PARAM). O código gerado em codigo[] consiste em:
+
+  55             push %rbp          (prólogo)
+  48 89 e5       mov %rsp, %rbp     (prólogo)
+  48 b8 + 8b     movabs $f, %rax    (carrega endereço de f)
+  ff d0          call *%rax         (chama f)
+  c9             leave              (epílogo)
+  c3             ret                (epílogo)
+
+O parâmetro PARAM não exige nenhum mov adicional pois o argumento
+já chega em %edi e permanece lá para a chamada de f.
+
+Teste com soma_um(int x) { return x + 1; }:
+  soma_um(4)  -> esperado 5,  obtido 5  
+  soma_um(10) -> esperado 11, obtido 11 
+  soma_um(0)  -> esperado 1,  obtido 1  
+
+Compilação: gcc -Wall -Wa,--execstack -o teste cria_func.c teste.c
+O warning "requires executable stack" é esperado e previsto pois 
+executamos código gerado dinamicamente em vetor de bytes.
+
+
+Etapa 4 - Inspeção do mov imediato 32 bits (parâmetro FIX)
+----------------------------------------------------------
+Para parâmetros FIX, o wrapper precisa mover uma constante
+inteira diretamente para o registrador antes de chamar f.
+Inspecionamos os bytes de movl $10, %edi:
+
+  bf 0a 00 00 00   mov $0xa, %edi
+
+Opcode bf seguido de 4 bytes da constante em little-endian.
+Não usa prefixo 48 pois int é 32 bits.
+
