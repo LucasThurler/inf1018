@@ -28,9 +28,9 @@ Etapa 2 - Inspeção do call indireto e movabs
 O trabalho exige que cria_func gere dinamicamente o código de
 uma função "wrapper" — func intermediária que recebe os argumentos
 livres (PARAM), completa os amarrados (FIX/IND), e então chama
-a função original f. Conforme orientação do professor na parte Dicas,
+a função original f. Conforme orientação na parte Dicas,
 inspecionamos os bytes de um wrapper simples para entender quais
-instruções de máquina precisaremos gerar.
+instruções de máquina precisamos gerar.
 
 Como o wrapper precisa chamar f sem saber seu endereço em tempo
 de compilação, usamos call indireto (call *%rax), onde %rax
@@ -216,38 +216,11 @@ Passo 2 — emitir FIX e IND normalmente:
   PTR_PAR + FIX: 48 bf/be/ba + 8 bytes do ponteiro
   PTR_PAR + IND: 48 b8 + 8 bytes + 48 8b 38/30/10
 
-Testes realizados:
-
-Teste 1: PARAM
-  soma_um(4)  -> esperado 5,  obtido 5 
-  soma_um(10) -> esperado 11, obtido 11
-  soma_um(0)  -> esperado 1,  obtido 1 
-
-Teste 2: PARAM + FIX
-  mult(3,10) -> esperado 30, obtido 30
-  mult(7,10) -> esperado 70, obtido 70
-  mult(1,10) -> esperado 10, obtido 10
-
-Teste 3: FIX + FIX
-  mult(6,7) -> esperado 42, obtido 42
-
-Teste 4: IND + FIX
-  var=5: mult(5,3) -> esperado 15, obtido 15
-  var=8: mult(8,3) -> esperado 24, obtido 24
-  var=2: mult(2,3) -> esperado 6,  obtido 6 
-
-Teste 5: IND + IND
-  a=4,b=9: mult(4,9) -> esperado 36, obtido 36
-  a=3,b=7: mult(3,7) -> esperado 21, obtido 21
-
-Teste 6: PTR_PAR FIX + PARAM + PARAM (memcmp do enunciado)
-  'quero saber' prefixo de 11 chars? -> esperado SIM, obtido SIM
-  'outro texto' prefixo de 11 chars? -> esperado NAO, obtido NAO
 
 
-
-Etapa 10 - Testes de casos extremos e cobertura completa
 ---------------------------------------------------------
+Etapa 10 - Testes de casos extremos e cobertura completa
+
 Realizamos testes cobrindo todas as combinações relevantes
 de tipos e origens, incluindo casos com 3 parâmetros e
 FIX em posições variadas.
